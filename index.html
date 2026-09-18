@@ -1,0 +1,560 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Device Lab</title>
+<style>
+	@import url('https://fonts.googleapis.com/css2?family=DM+Serif+Display&family=DM+Sans:wght@400;600;700&display=swap');
+
+	:root {
+		--bg: #1a1d23;
+		--surface: #22262e;
+		--surface-2: #2a2f39;
+		--border: #333844;
+		--accent: #d4a55a;
+		--accent-dim: rgba( 212, 165, 90, 0.15 );
+		--green: #6abf69;
+		--red: #e06c6c;
+		--text: #e8eaf0;
+		--text-dim: #8a909e;
+		--radius: 10px;
+	}
+
+	* { box-sizing: border-box; }
+
+	body {
+		margin: 0;
+		font-family: 'DM Sans', system-ui, sans-serif;
+		background: var( --bg );
+		color: var( --text );
+		min-height: 100vh;
+		padding: 32px 16px 64px;
+	}
+
+	.wrap {
+		max-width: 1120px;
+		margin: 0 auto;
+	}
+
+	.card {
+		background: var( --surface );
+		border: 1px solid var( --border );
+		border-radius: var( --radius );
+		padding: 24px;
+	}
+
+	.eyebrow {
+		font-size: 11px;
+		letter-spacing: .12em;
+		text-transform: uppercase;
+		color: var( --accent );
+		font-weight: 700;
+		margin: 0 0 4px;
+	}
+
+	h1 {
+		font-family: 'DM Serif Display', serif;
+		font-weight: 400;
+		color: var( --accent );
+		margin: 0 0 20px;
+		font-size: 2rem;
+	}
+
+	label {
+		display: block;
+		font-size: 13px;
+		font-weight: 600;
+		margin: 0 0 6px;
+		color: var( --text );
+	}
+
+	.url-row {
+		display: flex;
+		gap: 12px;
+		margin: 0 0 16px;
+	}
+
+	.field {
+		flex: 1;
+		display: flex;
+		align-items: center;
+		gap: 8px;
+		background: var( --surface-2 );
+		border: 1px solid var( --border );
+		border-radius: var( --radius );
+		padding: 0 14px;
+		height: 48px;
+	}
+
+	.field:focus-within { border-color: var( --accent ); }
+	.field .globe { color: var( --text-dim ); flex-shrink: 0; }
+
+	.field input {
+		flex: 1;
+		border: none;
+		outline: none;
+		font-size: 15px;
+		background: transparent;
+		color: var( --text );
+	}
+
+	.row {
+		display: flex;
+		gap: 12px;
+		align-items: flex-end;
+		flex-wrap: wrap;
+	}
+
+	button, select, input[type="number"] {
+		font-family: inherit;
+		font-size: 14px;
+	}
+
+	.btn {
+		border: none;
+		background: var( --accent );
+		color: #1a1d23;
+		font-weight: 700;
+		padding: 0 22px;
+		height: 48px;
+		border-radius: var( --radius );
+		cursor: pointer;
+		white-space: nowrap;
+	}
+
+	.btn.ghost {
+		background: var( --surface-2 );
+		color: var( --text-dim );
+		border: 1px solid var( --border );
+		font-weight: 600;
+	}
+
+	.btn.ghost:hover { color: var( --text ); border-color: var( --accent ); }
+
+	select, input[type="number"] {
+		height: 44px;
+		border: 1px solid var( --border );
+		border-radius: 8px;
+		padding: 0 12px;
+		background: var( --surface-2 );
+		color: var( --text );
+		cursor: pointer;
+	}
+
+	select:focus, input[type="number"]:focus { border-color: var( --accent ); outline: none; }
+	select option { background: var( --surface-2 ); color: var( --text ); }
+
+	.num { width: 84px; cursor: text; }
+
+	.seg {
+		display: inline-flex;
+		background: var( --surface-2 );
+		border: 1px solid var( --border );
+		border-radius: 8px;
+		padding: 4px;
+		gap: 4px;
+	}
+
+	.seg button {
+		border: none;
+		background: transparent;
+		padding: 8px 14px;
+		border-radius: 6px;
+		cursor: pointer;
+		color: var( --text-dim );
+		font-weight: 600;
+	}
+
+	.seg button.active {
+		background: var( --accent );
+		color: #1a1d23;
+	}
+
+	.hint {
+		color: var( --red );
+		font-size: 13px;
+		margin: 12px 0 0;
+		display: none;
+	}
+
+	.hint.show { display: block; }
+
+	.stage-head {
+		display: flex;
+		justify-content: space-between;
+		align-items: baseline;
+		margin: 24px 0 12px;
+	}
+
+	.dims { font-size: 20px; font-weight: 700; }
+	.dims small { font-size: 12px; font-weight: 500; color: var( --text-dim ); margin-left: 6px; }
+	.scale-badge { font-size: 12px; color: var( --text-dim ); }
+
+	.stage {
+		display: flex;
+		justify-content: center;
+		padding: 24px 0;
+		overflow: auto;
+	}
+
+	.device {
+		position: relative;
+		background: #000;
+		padding: 14px;
+		border-radius: 42px;
+		box-shadow: 0 20px 50px rgba( 0, 0, 0, .5 );
+		transition: width .25s ease, height .25s ease;
+		transform-origin: top center;
+	}
+
+	.device.flat { border-radius: 12px; padding: 8px; }
+
+	.device iframe {
+		display: block;
+		width: 100%;
+		height: 100%;
+		border: none;
+		background: #fff;
+		border-radius: 28px;
+	}
+
+	.device.flat iframe { border-radius: 6px; }
+
+	.empty {
+		text-align: center;
+		color: var( --text-dim );
+		padding: 80px 0;
+	}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+	<div class="card">
+
+		<p class="eyebrow">Website-Emulator</p>
+		<h1 id="title">iPhone Duo</h1>
+
+		<label for="url">Welche Website möchten Sie testen?</label>
+		<div class="url-row">
+			<div class="field">
+				<svg class="globe" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M3 12h18"/><path d="M12 3a14 14 0 0 1 0 18 14 14 0 0 1 0-18"/></svg>
+				<input type="text" id="url" placeholder="https://beispiel.de" value="https://lake-studio.de">
+			</div>
+			<button class="btn" id="load">Website laden →</button>
+		</div>
+
+		<div class="row">
+
+			<div>
+				<label for="device">Gerät</label>
+				<select id="device"></select>
+			</div>
+
+			<div id="stateWrap" style="display:none;">
+				<label for="state">Zustand</label>
+				<select id="state"></select>
+			</div>
+
+			<div>
+				<label>Ausrichtung</label>
+				<div class="seg" id="orient">
+					<button data-o="portrait" class="active">Hochkant</button>
+					<button data-o="landscape">Querformat</button>
+				</div>
+			</div>
+
+			<div>
+				<label>Custom B×H</label>
+				<div style="display:flex; gap:6px; align-items:center;">
+					<input type="number" class="num" id="cw" placeholder="Breite">
+					<span style="color:var(--text-dim);">×</span>
+					<input type="number" class="num" id="ch" placeholder="Höhe">
+				</div>
+			</div>
+
+			<div style="display:flex; gap:8px; align-items:flex-end;">
+				<button class="btn ghost" id="fit">Einpassen ✓</button>
+				<button class="btn ghost" id="reload">↻</button>
+			</div>
+
+		</div>
+
+		<p class="hint" id="hint">Diese Seite blockiert das Einbetten (X-Frame-Options / CSP). Eigene Domains kannst du dafür freigeben.</p>
+
+	</div>
+
+	<div class="stage-head">
+		<div class="dims"><span id="dimTxt">–</span><small>CSS-Pixel</small></div>
+		<div class="scale-badge" id="scaleTxt"></div>
+	</div>
+
+	<div class="stage" id="stage">
+		<div class="empty">URL eingeben und „Website laden" klicken.</div>
+	</div>
+
+</div>
+
+<script>
+(function() {
+	'use strict';
+
+	// Device presets grouped like DevTools. w/h are CSS pixels in portrait.
+	// states: multiple entries render a state selector (foldables, iPhone Duo).
+	const devices = [
+		{ group: 'Mobile', name: 'iPhone 6/7/8', w: 375, h: 667 },
+		{ group: 'Mobile', name: 'iPhone 6/7/8 Plus', w: 414, h: 736 },
+		{ group: 'Mobile', name: 'iPhone SE', w: 375, h: 667 },
+		{ group: 'Mobile', name: 'iPhone 16', w: 393, h: 852 },
+		{ group: 'Mobile', name: 'iPhone 16 Pro Max', w: 440, h: 956 },
+		{ group: 'Mobile', name: 'Pixel 9', w: 412, h: 915 },
+		{ group: 'Mobile', name: 'Pixel 9 Pro', w: 412, h: 915 },
+		{ group: 'Mobile', name: 'Pixel 10', w: 412, h: 915 },
+		{ group: 'Mobile', name: 'Samsung Galaxy A55', w: 384, h: 854 },
+
+		{ group: 'Foldables', name: 'Pixel 9 Pro Fold', states: [
+			{ label: 'Zugeklappt', w: 412, h: 915 },
+			{ label: 'Aufgeklappt', w: 842, h: 1080 }
+		]},
+		{ group: 'Foldables', name: 'Galaxy Z Fold 6', states: [
+			{ label: 'Zugeklappt', w: 344, h: 882 },
+			{ label: 'Aufgeklappt', w: 653, h: 829 }
+		]},
+
+		{ group: 'Tablets & Desktops', name: 'iPad Mini', w: 744, h: 1133 },
+		{ group: 'Tablets & Desktops', name: 'iPad Pro 13"', w: 1024, h: 1366 },
+		{ group: 'Tablets & Desktops', name: 'Surface Pro 10', w: 912, h: 1368 },
+
+		{ group: 'Custom', name: 'iPhone 14 Pro', w: 393, h: 852 },
+		{ group: 'Custom', name: 'iPhone Duo', states: [
+			{ label: 'Zugeklappt', w: 466, h: 678 },
+			{ label: 'Aufgeklappt Portrait', w: 626, h: 890 },
+			{ label: 'Aufgeklappt Landscape', w: 890, h: 626 }
+		]}
+	];
+
+	const $ = function( id ) { return document.getElementById( id ); };
+
+	const elDevice = $( 'device' );
+	const elState = $( 'state' );
+	const elStateWrap = $( 'stateWrap' );
+	const elStage = $( 'stage' );
+	const elCw = $( 'cw' );
+	const elCh = $( 'ch' );
+	const elDim = $( 'dimTxt' );
+	const elScale = $( 'scaleTxt' );
+	const elHint = $( 'hint' );
+	const elTitle = $( 'title' );
+
+	let orient = 'portrait';
+	let fit = true;
+	let currentUrl = '';
+
+	// Build grouped device dropdown
+	const groups = {};
+
+	devices.forEach( function( d, i ) {
+		if ( ! groups[ d.group ] ) {
+			const og = document.createElement( 'optgroup' );
+			og.label = d.group;
+			elDevice.appendChild( og );
+			groups[ d.group ] = og;
+		}
+
+		const opt = document.createElement( 'option' );
+		opt.value = i;
+		opt.textContent = d.name;
+		groups[ d.group ].appendChild( opt );
+	});
+
+	// Default to iPhone Duo
+	elDevice.value = devices.findIndex( function( d ) { return d.name === 'iPhone Duo'; });
+
+	const getDevice = function() { return devices[ parseInt( elDevice.value, 10 ) ]; };
+
+	const getSize = function() {
+		const d = getDevice();
+
+		let w, h;
+
+		if ( d.states ) {
+			const s = d.states[ parseInt( elState.value, 10 ) || 0 ];
+			w = s.w;
+			h = s.h;
+		} else {
+			w = d.w;
+			h = d.h;
+		}
+
+		// Manual override wins
+		const cw = parseInt( elCw.value, 10 );
+		const ch = parseInt( elCh.value, 10 );
+
+		if ( cw > 0 && ch > 0 ) {
+			w = cw;
+			h = ch;
+		} else if ( orient === 'landscape' ) {
+			const t = w;
+			w = h;
+			h = t;
+		}
+
+		return { w: w, h: h };
+	};
+
+	const buildStates = function() {
+		const d = getDevice();
+
+		if ( ! d.states ) {
+			elStateWrap.style.display = 'none';
+			return;
+		}
+
+		elStateWrap.style.display = '';
+		elState.innerHTML = '';
+
+		d.states.forEach( function( s, i ) {
+			const opt = document.createElement( 'option' );
+			opt.value = i;
+			opt.textContent = s.label;
+			elState.appendChild( opt );
+		});
+	};
+
+	const render = function() {
+		const size = getSize();
+		const flat = ( size.w > 700 || size.h > 700 ); // desktop/tablet look
+
+		// Headline always reflects the active device
+		const d = getDevice();
+		const manual = parseInt( elCw.value, 10 ) > 0 && parseInt( elCh.value, 10 ) > 0;
+		let title = manual ? 'Custom' : d.name;
+
+		if ( ! manual && d.states ) {
+			title += ' · ' + d.states[ parseInt( elState.value, 10 ) || 0 ].label;
+		}
+
+		elTitle.textContent = title;
+
+		elDim.textContent = size.w + ' × ' + size.h;
+
+		if ( ! currentUrl ) {
+			elStage.innerHTML = '<div class="empty">URL eingeben und „Website laden" klicken.</div>';
+			elScale.textContent = '';
+			return;
+		}
+
+		// Scale to fit available width/height
+		const frameW = size.w + ( flat ? 16 : 28 );
+		const frameH = size.h + ( flat ? 16 : 28 );
+
+		let scale = 1;
+
+		if ( fit ) {
+			const availW = elStage.clientWidth - 8;
+			const availH = Math.max( 400, window.innerHeight - 260 );
+			scale = Math.min( 1, availW / frameW, availH / frameH );
+		}
+
+		elScale.textContent = scale < 1 ? 'Skaliert auf ' + Math.round( scale * 100 ) + '%' : 'Originalgröße 100%';
+
+		const iframe = '<iframe id="frame" src="' + currentUrl + '" sandbox="allow-scripts allow-same-origin allow-forms allow-popups"></iframe>';
+
+		elStage.innerHTML = '<div class="device' + ( flat ? ' flat' : '' ) + '" style="width:' + size.w + 'px; height:' + size.h + 'px; transform:scale(' + scale + ');">' + iframe + '</div>';
+
+		// Keep vertical space reserved for the scaled device
+		elStage.style.minHeight = ( frameH * scale + 48 ) + 'px';
+
+		watchBlocked();
+	};
+
+	// Detect blocked embedding: if the frame never reaches a readable state
+	let blockTimer = null;
+
+	const watchBlocked = function() {
+		elHint.classList.remove( 'show' );
+
+		const frame = $( 'frame' );
+
+		if ( ! frame ) return;
+
+		clearTimeout( blockTimer );
+
+		frame.addEventListener( 'load', function() {
+			clearTimeout( blockTimer );
+			elHint.classList.remove( 'show' );
+		});
+
+		// If nothing loads within 4s, likely blocked by X-Frame-Options / CSP
+		blockTimer = setTimeout( function() {
+			try {
+				const ok = frame.contentWindow && frame.contentWindow.location;
+			} catch ( e ) {}
+
+			if ( ! frame.contentDocument && ! frame.contentWindow ) {
+				elHint.classList.add( 'show' );
+			}
+		}, 4000 );
+	};
+
+	const loadUrl = function() {
+		let u = $( 'url' ).value.trim();
+
+		if ( ! u ) return;
+
+		if ( ! /^https?:\/\//i.test( u ) ) u = 'https://' + u;
+
+		currentUrl = u;
+		render();
+	};
+
+	// Events
+	$( 'load' ).addEventListener( 'click', loadUrl );
+
+	$( 'url' ).addEventListener( 'keydown', function( e ) {
+		if ( e.key === 'Enter' ) loadUrl();
+	});
+
+	$( 'reload' ).addEventListener( 'click', function() {
+		const frame = $( 'frame' );
+		if ( frame ) frame.src = frame.src;
+	});
+
+	elDevice.addEventListener( 'change', function() {
+		buildStates();
+		elCw.value = '';
+		elCh.value = '';
+		render();
+	});
+
+	elState.addEventListener( 'change', render );
+	elCw.addEventListener( 'input', render );
+	elCh.addEventListener( 'input', render );
+
+	$( 'orient' ).querySelectorAll( 'button' ).forEach( function( btn ) {
+		btn.addEventListener( 'click', function() {
+			$( 'orient' ).querySelectorAll( 'button' ).forEach( function( b ) { b.classList.remove( 'active' ); });
+			btn.classList.add( 'active' );
+			orient = btn.dataset.o;
+			render();
+		});
+	});
+
+	$( 'fit' ).addEventListener( 'click', function() {
+		fit = ! fit;
+		$( 'fit' ).textContent = fit ? 'Einpassen ✓' : 'Einpassen';
+		render();
+	});
+
+	window.addEventListener( 'resize', function() {
+		if ( fit ) render();
+	});
+
+	// Init
+	buildStates();
+	render();
+})();
+</script>
+</body>
+</html>
