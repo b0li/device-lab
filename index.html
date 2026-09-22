@@ -180,6 +180,53 @@
 
 	.hint.show { display: block; }
 
+	.compare-bar {
+		display: flex;
+		flex-wrap: wrap;
+		gap: 8px;
+		margin: 16px 0 0;
+	}
+
+	.chip {
+		border: 1px solid var( --border );
+		background: var( --surface-2 );
+		color: var( --text-dim );
+		border-radius: 20px;
+		padding: 6px 14px;
+		font-size: 13px;
+		cursor: pointer;
+	}
+
+	.chip.active {
+		background: var( --accent-dim );
+		border-color: var( --accent );
+		color: var( --accent );
+	}
+
+	.cmp-stage {
+		display: flex;
+		gap: 28px;
+		align-items: flex-start;
+	}
+
+	.cmp-item { flex: 0 0 auto; }
+
+	.cmp-label {
+		text-align: center;
+		font-size: 12px;
+		color: var( --text-dim );
+		margin: 0 0 10px;
+	}
+
+	.cmp-label b {
+		display: block;
+		color: var( --text );
+		font-weight: 600;
+		font-size: 13px;
+	}
+
+	.cmp-frame { overflow: hidden; }
+
 	.stage-head {
 		display: flex;
 		justify-content: space-between;
@@ -248,6 +295,14 @@
 		<div class="row">
 
 			<div>
+				<label>Ansicht</label>
+				<div class="seg" id="view">
+					<button data-v="single" class="active">Einzeln</button>
+					<button data-v="compare">Vergleich</button>
+				</div>
+			</div>
+
+			<div id="deviceGroup">
 				<label for="device">Gerät</label>
 				<select id="device"></select>
 			</div>
@@ -265,7 +320,7 @@
 				</div>
 			</div>
 
-			<div>
+			<div id="customGroup">
 				<label>Custom B×H</label>
 				<div style="display:flex; gap:6px; align-items:center;">
 					<input type="number" class="num" id="cw" placeholder="Breite">
@@ -280,6 +335,8 @@
 			</div>
 
 		</div>
+
+		<div class="compare-bar" id="compareBar" style="display:none;"></div>
 
 		<p class="hint" id="hint">Diese Seite blockiert das Einbetten (X-Frame-Options / CSP). Eigene Domains kannst du dafür freigeben.</p>
 
@@ -346,10 +403,15 @@
 	const elScale = $( 'scaleTxt' );
 	const elHint = $( 'hint' );
 	const elTitle = $( 'title' );
+	const elCompareBar = $( 'compareBar' );
 
 	let orient = 'portrait';
 	let fit = true;
 	let currentUrl = '';
+	let view = 'single';
+
+	// Devices selected in compare view (index into devices[])
+	const compareSel = new Set();
 
 	// Build grouped device dropdown
 	const groups = {};
@@ -370,6 +432,33 @@
 
 	// Default to iPhone Duo
 	elDevice.value = devices.findIndex( function( d ) { return d.name === 'iPhone Duo'; });
+
+	// Build compare chips + default selection (one phone + one tablet)
+	const idxOf = function( name ) { return devices.findIndex( function( d ) { return d.name === name; }); };
+
+	compareSel.add( idxOf( 'iPhone 16' ) );
+	compareSel.add( idxOf( 'iPad Mini' ) );
+
+	devices.forEach( function( d, i ) {
+		const chip = document.createElement( 'button' );
+		chip.className = 'chip' + ( compareSel.has( i ) ? ' active' : '' );
+		chip.textContent = d.name;
+		chip.dataset.i = i;
+
+		chip.addEventListener( 'click', function() {
+			if ( compareSel.has( i ) ) {
+				compareSel.delete( i );
+				chip.classList.remove( 'active' );
+			} else {
+				compareSel.add( i );
+				chip.classList.add( 'active' );
+			}
+
+			render();
+		});
+
+		elCompareBar.appendChild( chip );
+	});
 
 	const getDevice = function() { return devices[ parseInt( elDevice.value, 10 ) ]; };
 
@@ -422,7 +511,36 @@
 		});
 	};
 
+	// Size for a device in compare view (first state, orientation applied)
+	const compareSize = function( d ) {
+		let w, h;
+
+		if ( d.states ) {
+			w = d.states[ 0 ].w;
+			h = d.states[ 0 ].h;
+		} else {
+			w = d.w;
+			h = d.h;
+		}
+
+		if ( orient === 'landscape' ) {
+			const t = w;
+			w = h;
+			h = t;
+		}
+
+		return { w: w, h: h };
+	};
+
 	const render = function() {
+		if ( view === 'compare' ) {
+			renderCompare();
+		} else {
+			renderSingle();
+		}
+	};
+
+	const renderSingle = function() {
 		const size = getSize();
 		const flat = ( size.w > 700 || size.h > 700 ); // desktop/tablet look
 
@@ -461,12 +579,73 @@
 
 		const iframe = '<iframe id="frame" src="' + currentUrl + '" sandbox="allow-scripts allow-same-origin allow-forms allow-popups"></iframe>';
 
-		elStage.innerHTML = '<div class="device' + ( flat ? ' flat' : '' ) + '" style="width:' + size.w + 'px; height:' + size.h + 'px; transform:scale(' + scale + ');">' + iframe + '</div>';
+		elStage.innerHTML = '<div class="device' + ( flat ? ' flat' : '' ) + '" style="width:' + frameW + 'px; height:' + frameH + 'px; transform:scale(' + scale + ');">' + iframe + '</div>';
 
 		// Keep vertical space reserved for the scaled device
 		elStage.style.minHeight = ( frameH * scale + 48 ) + 'px';
 
 		watchBlocked();
+	};
+
+	const renderCompare = function() {
+		elTitle.textContent = 'Vergleich';
+
+		const sel = Array.from( compareSel ).sort( function( a, b ) { return a - b; });
+
+		elDim.textContent = sel.length + ' Geräte';
+
+		if ( ! currentUrl ) {
+			elStage.innerHTML = '<div class="empty">URL eingeben und „Website laden" klicken.</div>';
+			elScale.textContent = '';
+			return;
+		}
+
+		if ( ! sel.length ) {
+			elStage.innerHTML = '<div class="empty">Mindestens ein Gerät in der Leiste wählen.</div>';
+			elScale.textContent = '';
+			return;
+		}
+
+		// Measure all frames first, then apply one shared scale so sizes stay comparable
+		let maxFrameH = 0;
+
+		const items = sel.map( function( i ) {
+			const d = devices[ i ];
+			const s = compareSize( d );
+			const flat = ( s.w > 700 || s.h > 700 );
+			const pad = flat ? 16 : 28;
+			const fw = s.w + pad;
+			const fh = s.h + pad;
+
+			if ( fh > maxFrameH ) maxFrameH = fh;
+
+			return { name: d.name, s: s, flat: flat, fw: fw, fh: fh };
+		});
+
+		const availH = Math.max( 400, window.innerHeight - 320 );
+		const scale = Math.min( 1, availH / maxFrameH );
+
+		elScale.textContent = scale < 1 ? 'Skaliert auf ' + Math.round( scale * 100 ) + '%' : 'Originalgröße 100%';
+
+		let html = '<div class="cmp-stage">';
+
+		items.forEach( function( it ) {
+			const frame = '<iframe src="' + currentUrl + '" sandbox="allow-scripts allow-same-origin allow-forms allow-popups"></iframe>';
+
+			html += '<div class="cmp-item">'
+				+ '<div class="cmp-label"><b>' + it.name + '</b>' + it.s.w + ' × ' + it.s.h + '</div>'
+				+ '<div class="cmp-frame" style="width:' + ( it.fw * scale ) + 'px; height:' + ( it.fh * scale ) + 'px;">'
+				+ '<div class="device' + ( it.flat ? ' flat' : '' ) + '" style="width:' + it.fw + 'px; height:' + it.fh + 'px; transform:scale(' + scale + '); transform-origin:top left;">'
+				+ frame
+				+ '</div></div></div>';
+		});
+
+		html += '</div>';
+
+		elStage.innerHTML = html;
+		elStage.style.minHeight = ( maxFrameH * scale + 48 ) + 'px';
+
+		elHint.classList.remove( 'show' );
 	};
 
 	// Detect blocked embedding: if the frame never reaches a readable state
@@ -531,6 +710,24 @@
 	elState.addEventListener( 'change', render );
 	elCw.addEventListener( 'input', render );
 	elCh.addEventListener( 'input', render );
+
+	$( 'view' ).querySelectorAll( 'button' ).forEach( function( btn ) {
+		btn.addEventListener( 'click', function() {
+			$( 'view' ).querySelectorAll( 'button' ).forEach( function( b ) { b.classList.remove( 'active' ); });
+			btn.classList.add( 'active' );
+			view = btn.dataset.v;
+
+			const single = view === 'single';
+
+			$( 'deviceGroup' ).style.display = single ? '' : 'none';
+			$( 'customGroup' ).style.display = single ? '' : 'none';
+			$( 'fit' ).style.display = single ? '' : 'none';
+			elStateWrap.style.display = ( single && getDevice().states ) ? '' : 'none';
+			elCompareBar.style.display = single ? 'none' : 'flex';
+
+			render();
+		});
+	});
 
 	$( 'orient' ).querySelectorAll( 'button' ).forEach( function( btn ) {
 		btn.addEventListener( 'click', function() {
