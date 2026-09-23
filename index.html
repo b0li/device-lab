@@ -37,6 +37,12 @@
 		margin: 0 auto;
 	}
 
+	/* Stage spans the full viewport width, controls stay in .wrap */
+	.stagewrap {
+		max-width: 1600px;
+		margin: 0 auto;
+	}
+
 	.card {
 		background: var( --surface );
 		border: 1px solid var( --border );
@@ -207,6 +213,7 @@
 		display: flex;
 		gap: 28px;
 		align-items: flex-start;
+		justify-content: safe center;
 		overflow-x: auto;
 		padding-bottom: 8px;
 	}
@@ -361,6 +368,10 @@
 		<p class="hint" id="hint">Diese Seite blockiert das Einbetten (X-Frame-Options / CSP). Eigene Domains kannst du dafür freigeben.</p>
 
 	</div>
+
+</div>
+
+<div class="stagewrap">
 
 	<div class="stage-head">
 		<div class="dims"><span id="dimTxt">–</span><small>CSS-Pixel</small></div>
