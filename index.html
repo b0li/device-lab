@@ -207,6 +207,8 @@
 		display: flex;
 		gap: 28px;
 		align-items: flex-start;
+		overflow-x: auto;
+		padding-bottom: 8px;
 	}
 
 	.cmp-item { flex: 0 0 auto; }
@@ -243,6 +245,11 @@
 		justify-content: center;
 		padding: 24px 0;
 		overflow: auto;
+	}
+
+	.stage.compare {
+		display: block;
+		overflow: visible;
 	}
 
 	.device {
@@ -555,6 +562,8 @@
 	};
 
 	const renderSingle = function() {
+		elStage.className = 'stage';
+
 		const size = getSize();
 		const flat = ( size.w > 700 || size.h > 700 ); // desktop/tablet look
 
@@ -602,6 +611,9 @@
 	};
 
 	const renderCompare = function() {
+		elStage.className = 'stage compare';
+		elStage.style.minHeight = '';
+
 		elTitle.textContent = 'Vergleich';
 
 		const sel = Array.from( compareSel ).sort( function( a, b ) { return a - b; });
@@ -609,12 +621,14 @@
 		elDim.textContent = sel.length + ' Geräte';
 
 		if ( ! currentUrl ) {
+			elStage.className = 'stage';
 			elStage.innerHTML = '<div class="empty">URL eingeben und „Website laden" klicken.</div>';
 			elScale.textContent = '';
 			return;
 		}
 
 		if ( ! sel.length ) {
+			elStage.className = 'stage';
 			elStage.innerHTML = '<div class="empty">Mindestens ein Gerät in der Leiste wählen.</div>';
 			elScale.textContent = '';
 			return;
@@ -643,7 +657,7 @@
 		if ( zv > 0 ) {
 			scale = zv / 100;
 		} else {
-			const availH = Math.max( 400, window.innerHeight - 320 );
+			const availH = Math.max( 400, window.innerHeight - 240 );
 			scale = Math.min( 1, availH / maxFrameH );
 		}
 
@@ -665,7 +679,6 @@
 		html += '</div>';
 
 		elStage.innerHTML = html;
-		elStage.style.minHeight = ( maxFrameH * scale + 48 ) + 'px';
 
 		elHint.classList.remove( 'show' );
 	};
