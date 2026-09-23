@@ -329,6 +329,19 @@
 				</div>
 			</div>
 
+			<div id="zoomGroup" style="display:none;">
+				<label for="zoom">Zoom %</label>
+				<div style="display:flex; gap:6px; align-items:center;">
+					<input type="number" class="num" id="zoom" placeholder="Auto" min="5" max="300">
+					<div class="seg" id="zoomPresets">
+						<button data-z="">Auto</button>
+						<button data-z="50">50</button>
+						<button data-z="75">75</button>
+						<button data-z="100">100</button>
+					</div>
+				</div>
+			</div>
+
 			<div style="display:flex; gap:8px; align-items:flex-end;">
 				<button class="btn ghost" id="fit">Einpassen ✓</button>
 				<button class="btn ghost" id="reload">↻</button>
@@ -404,6 +417,7 @@
 	const elHint = $( 'hint' );
 	const elTitle = $( 'title' );
 	const elCompareBar = $( 'compareBar' );
+	const elZoom = $( 'zoom' );
 
 	let orient = 'portrait';
 	let fit = true;
@@ -622,10 +636,18 @@
 			return { name: d.name, s: s, flat: flat, fw: fw, fh: fh };
 		});
 
-		const availH = Math.max( 400, window.innerHeight - 320 );
-		const scale = Math.min( 1, availH / maxFrameH );
+		// Manual zoom overrides auto-fit; empty field = fit to height
+		const zv = parseFloat( elZoom.value );
+		let scale;
 
-		elScale.textContent = scale < 1 ? 'Skaliert auf ' + Math.round( scale * 100 ) + '%' : 'Originalgröße 100%';
+		if ( zv > 0 ) {
+			scale = zv / 100;
+		} else {
+			const availH = Math.max( 400, window.innerHeight - 320 );
+			scale = Math.min( 1, availH / maxFrameH );
+		}
+
+		elScale.textContent = ( zv > 0 ? 'Zoom ' : 'Auto · ' ) + Math.round( scale * 100 ) + '%';
 
 		let html = '<div class="cmp-stage">';
 
@@ -722,9 +744,19 @@
 			$( 'deviceGroup' ).style.display = single ? '' : 'none';
 			$( 'customGroup' ).style.display = single ? '' : 'none';
 			$( 'fit' ).style.display = single ? '' : 'none';
+			$( 'zoomGroup' ).style.display = single ? 'none' : '';
 			elStateWrap.style.display = ( single && getDevice().states ) ? '' : 'none';
 			elCompareBar.style.display = single ? 'none' : 'flex';
 
+			render();
+		});
+	});
+
+	elZoom.addEventListener( 'input', render );
+
+	$( 'zoomPresets' ).querySelectorAll( 'button' ).forEach( function( btn ) {
+		btn.addEventListener( 'click', function() {
+			elZoom.value = btn.dataset.z;
 			render();
 		});
 	});
