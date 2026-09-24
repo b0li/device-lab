@@ -295,13 +295,13 @@
 	<div class="card">
 
 		<p class="eyebrow">Website-Emulator</p>
-		<h1 id="title">iPhone Duo</h1>
+		<h1>Device Lab</h1>
 
 		<label for="url">Welche Website möchten Sie testen?</label>
 		<div class="url-row">
 			<div class="field">
 				<svg class="globe" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M3 12h18"/><path d="M12 3a14 14 0 0 1 0 18 14 14 0 0 1 0-18"/></svg>
-				<input type="text" id="url" placeholder="https://beispiel.de" value="https://lake-studio.de">
+				<input type="text" id="url" placeholder="https://example.com" value="https://example.com">
 			</div>
 			<button class="btn" id="load">Website laden →</button>
 		</div>
@@ -374,7 +374,7 @@
 <div class="stagewrap">
 
 	<div class="stage-head">
-		<div class="dims"><span id="dimTxt">–</span><small>CSS-Pixel</small></div>
+		<div class="dims"><span id="devName">iPhone Duo</span> <small><span id="dimTxt">–</span> · CSS-Pixel</small></div>
 		<div class="scale-badge" id="scaleTxt"></div>
 	</div>
 
@@ -433,7 +433,7 @@
 	const elDim = $( 'dimTxt' );
 	const elScale = $( 'scaleTxt' );
 	const elHint = $( 'hint' );
-	const elTitle = $( 'title' );
+	const elDevName = $( 'devName' );
 	const elCompareBar = $( 'compareBar' );
 	const elZoom = $( 'zoom' );
 
@@ -587,7 +587,7 @@
 			title += ' · ' + d.states[ parseInt( elState.value, 10 ) || 0 ].label;
 		}
 
-		elTitle.textContent = title;
+		elDevName.textContent = title;
 
 		elDim.textContent = size.w + ' × ' + size.h;
 
@@ -625,7 +625,7 @@
 		elStage.className = 'stage compare';
 		elStage.style.minHeight = '';
 
-		elTitle.textContent = 'Vergleich';
+		elDevName.textContent = 'Vergleich';
 
 		const sel = Array.from( compareSel ).sort( function( a, b ) { return a - b; });
 
