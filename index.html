@@ -358,7 +358,7 @@
 
 			<div style="display:flex; gap:8px; align-items:flex-end;">
 				<button class="btn ghost" id="fit">Einpassen ✓</button>
-				<button class="btn ghost" id="reload">↻</button>
+				<button class="btn ghost" id="reload" title="Alle Inhalte neu laden – ohne die Einrichtung zurückzusetzen">↻ Neu laden</button>
 			</div>
 
 		</div>
@@ -741,9 +741,11 @@
 		if ( e.key === 'Enter' ) loadUrl();
 	});
 
+	// Reload every iframe in the stage (single + compare) without re-rendering the setup
 	$( 'reload' ).addEventListener( 'click', function() {
-		const frame = $( 'frame' );
-		if ( frame ) frame.src = frame.src;
+		elStage.querySelectorAll( 'iframe' ).forEach( function( frame ) {
+			frame.src = frame.src;
+		});
 	});
 
 	elDevice.addEventListener( 'change', function() {
